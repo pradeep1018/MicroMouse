@@ -1,14 +1,12 @@
 //
 
-// This is the main file for the algorithm.
+// This is the main code for micromouse
 
-// Authors - Ashutosh Sharma (ashutoshshrm529)
-
-//           Hardik Jain (nepython)
+// This code was used in the micromouse competition conducted during Advitiya 2020, Annual Tech Fest of IIT Ropar
 
 //
 
-//
+#define maze_size 16
 
 // FUNCTIONS
 
@@ -18,21 +16,21 @@
 
     void initialize_maze(); // initializes the maze to original value(with no knowledge of walls)
 
-    void update_walls(); // checks and updates the walls in the maze array
+    void update_walls(); // checks and updates the walls in the maze array before each move
 
     void update_maze(); // updates the maze using the floodfill algorithm
 
-    void move_toward_goal(); // move to the adjacent square with minimum number (flood fill)
+    void move_toward_goal(); // moves to the adjacent square with minimum number (flood fill)
 
-    void print_maze();
+//  WALL DETECTION 
 
-//  WALL DETECTION
+//  ULTRASONIC SENSORS WERE USED
 
-    float Forward_Distance(); // Returns the distance as read by the forward ir using SharpIR Library
+    float Forward_Distance(); // Returns the distance as read by the forward sensor
 
-    float Left_Distance(); // Returns the distance as read by the left ir using SharpIR Library
+    float Left_Distance(); // Returns the distance as read by the left sensor
 
-    float Right_Distance(); // Returns the distance as read by the right ir using SharpIR Library
+    float Right_Distance(); // Returns the distance as read by the right sensor
 
     bool check_wall_forward(); // Returns true if there is a wall in front of the mouse else false.
 
@@ -64,45 +62,50 @@
 
 //  FLOODFILL
 
-    #define MAZE_SIZE 16
 
 
+    int goal_maze[maze_size][maze_size];
 
-    int goal_maze[MAZE_SIZE][MAZE_SIZE];
-
-    int wall_maze[MAZE_SIZE][MAZE_SIZE][4]; // up,left,right,down
+    int wall_maze[maze_size][maze_size][4]; // up,left,right,down
 
 
 
     int facing = 0; // 0 for up; 1 for left; 2 for right; 3 for down
 
-    int current_row = MAZE_SIZE-1;
+    int current_row = maze_size-1;
 
     int current_column = 0;
 
-    int GOAL_ROW = 3; // definition of the goal where the mouse wants to go to
+    int GOAL_ROW;  // definition of the goal where the mouse wants to go to
 
-    int GOAL_COLUMN = 3;
+    int GOAL_COLUMN;
 
 
 
 //  WALL DETECTION
 
-    #define FRONT_IR_PIN A0 // front ir data pin
+//sensors pins(trig)
+    #define trig_right A1
 
-    #define LEFT_IR_PIN A1 // left ir data pin
+    #define trig_front A3
+    
+    #define trig_left A5
 
-    #define RIGHT_IR_PIN A2 // right ir data pin
+//sensors pins(echo)
+    
+    #define echo_right A0
+    
+    #define echo_front A2
+    
+    #define echo_left A4
 
-    #define IR_MODEL 430
 
 
+    #define THRESHOLD_FORWARD 4 // the threshold to check if wall present forward
 
-    #define THRESHOLD_FORWARD 8 // the threshold to check if wall present forward
+    #define THRESHOLD_LEFT 4 // the threshold to check if wall present left
 
-    #define THRESHOLD_LEFT 6 // the threshold to check if wall present left
-
-    #define THRESHOLD_RIGHT 6 // the threshold to check if wall present right
+    #define THRESHOLD_RIGHT 4 // the threshold to check if wall present right
 
 
 
@@ -113,22 +116,19 @@
 
 
 // MOTOR
-
-    #define RIGHT_MOTOR_1 4 // pin 1 for right motor
+    
+    #define RIGHT_MOTOR_1 6// pin 1 for right motor
 
     #define RIGHT_MOTOR_2 5 // pin 2 for right motor
 
     #define LEFT_MOTOR_1 9 // pin 1 for left motor
 
-    #define LEFT_MOTOR_2 17 // pin 2 for left motor
+    #define LEFT_MOTOR_2 10 // pin 2 for left motor
 
-
-
+    
     #define ERROR_THRESHOLD 5 // To define threshold value for error
 
-    #define RIGHT_MOTOR_ENABLE 6 // enable pin for right motor
-
-    #define LEFT_MOTOR_ENABLE 7 // enable pin for left MOTOR
+  
 
     int LEFT_MOTOR_SPEED=255; // max speed for the motors. reduce if necessary
 
@@ -136,28 +136,26 @@
 
 
 
-// ENCODER
+// header files
 
-    #include <SharpIR.h>
-
-    #include <Encoder.h>
+    #include <Encoder.h>  //  the header file to get the readings of encoders
 
 
+//encoders
 
-    #define RIGHT_ENCODER_DISTANCE 19 // pin for checking distance using right encoder
+    #define RIGHT_ENCODER_DISTANCE 11 // pin for checking distance using right encoder
 
-    #define RIGHT_ENCODER_DIRECTION 18 // pin for checking direction of right encoder
+    #define RIGHT_ENCODER_DIRECTION 12 // pin for checking direction of right encoder
 
-    #define LEFT_ENCODER_DISTANCE 21 // pin for checking distance using left encoder
+    #define LEFT_ENCODER_DISTANCE 2 // pin for checking distance using left encoder
 
-    #define LEFT_ENCODER_DIRECTION 20 // pin for checking direction of left encoder
+    #define LEFT_ENCODER_DIRECTION 3 // pin for checking direction of left encoder
 
 
 
     Encoder ENCODER_RIGHT(RIGHT_ENCODER_DISTANCE, RIGHT_ENCODER_DIRECTION);
 
     Encoder ENCODER_LEFT(LEFT_ENCODER_DISTANCE, LEFT_ENCODER_DIRECTION);
-
 
 
     //Global Flags
@@ -182,25 +180,23 @@ void setup()
 
 {
 
-    // WALL DETECTION
+  pinMode(trig_right,OUTPUT);
+  pinMode(trig_front,OUTPUT);
+  pinMode(trig_left,OUTPUT);
 
-    pinMode(FRONT_IR_PIN,INPUT);
+  pinMode(echo_right,INPUT);
+  pinMode(echo_front,INPUT);
+  pinMode(echo_left,INPUT);
 
-    pinMode(LEFT_IR_PIN,INPUT);
+  pinMode(LEFT_MOTOR_1,OUTPUT);
+  pinMode(LEFT_MOTOR_2,OUTPUT);
+  pinMode(RIGHT_MOTOR_1,OUTPUT);
+  pinMode(RIGHT_MOTOR_2,OUTPUT);
 
-    pinMode(RIGHT_IR_PIN,INPUT);
-
-
-
-    // MOTOR
-
-    pinMode(RIGHT_MOTOR_1, OUTPUT);
-
-    pinMode(LEFT_MOTOR_1, OUTPUT);
-
-    pinMode(RIGHT_MOTOR_2, OUTPUT);
-
-    pinMode(LEFT_MOTOR_2, OUTPUT);
+  pinMode(RIGHT_ENCODER_DISTANCE,INPUT);
+  pinMode(RIGHT_ENCODER_DIRECTION,INPUT);
+  pinMode(LEFT_ENCODER_DISTANCE,INPUT);
+  pinMode(LEFT_ENCODER_DIRECTION,INPUT);
 
 }
 
@@ -209,89 +205,30 @@ void setup()
 void loop()
 {
 
-    GOAL_ROW=(MAZE_SIZE/2);
-    GOAL_COLUMN=(MAZE_SIZE/2);
+    GOAL_ROW=(maze_size/2);
+    GOAL_COLUMN=(maze_size/2);
     initialize_maze();
 
-    while(!((current_row==GOAL_ROW)&&(current_column==GOAL_COLUMN)))
+    while(!((current_row==GOAL_ROW)&&(current_column==GOAL_COLUMN)))  //  loop until the mouse reaches the centre
     {
         update_walls();
         update_maze();
         move_toward_goal();
-        print_maze();
+        //print_maze();
         delay(500);
     }
 
-    GOAL_ROW=(MAZE_SIZE-1);
+    GOAL_ROW=(maze_size-1);
     GOAL_COLUMN=0;
     initialize_maze();
 
-    while(!((current_row==GOAL_ROW)&&(current_column==GOAL_COLUMN)))
+    while(!((current_row==GOAL_ROW)&&(current_column==GOAL_COLUMN)))  //  loop until the mouse returns back to the starting position
     {
         update_walls();
         update_maze();
         move_toward_goal();
-        print_maze();
+        //print_maze();
         delay(500);
-    }
-}
-
-void print_maze()
-{
-    for(int i = 0; i < MAZE_SIZE; i++)
-    {
-        for(int j = 0; j < MAZE_SIZE; j++)
-        {
-            if(wall_maze[i][j][0]==1)
-            {
-                Serial.print("   --   ");
-            }
-            else
-            {
-                Serial.print("        ");
-            }
-        }
-        Serial.println();
-        for(int j = 0; j < MAZE_SIZE; j++)
-        {
-            if(wall_maze[i][j][1]==1)
-            {
-                Serial.print(" | ");
-            }
-            else
-            {
-                Serial.print("   ");
-            }
-            if(goal_maze[i][j]<10)
-            {
-                Serial.print(goal_maze[i][j]);
-            }
-            else
-            {
-                Serial.print(goal_maze[i][j]);
-            }
-            if(wall_maze[i][j][2]==1)
-            {
-                Serial.print(" | ");
-            }
-            else
-            {
-                Serial.print("   ");
-            }
-        }
-        Serial.println();
-        for(int j = 0; j < MAZE_SIZE; j++)
-        {
-            if(wall_maze[i][j][3]==1)
-            {
-                Serial.print("   --   ");
-            }
-            else
-            {
-                Serial.print("        ");
-            }
-        }
-        Serial.println();
     }
 }
 
@@ -338,7 +275,7 @@ void move_toward_goal()
             facing = 2;
 
             current_column++;
-
+ 
         }
 
         else if(goal_maze[current_row+1][current_column]==(goal_maze[current_row][current_column]-1))
@@ -527,7 +464,7 @@ void update_walls()
 
     {
 
-        if(check_wall_forward)
+        if(check_wall_forward())
 
         {
 
@@ -545,7 +482,7 @@ void update_walls()
 
 
 
-        if(check_wall_left)
+        if(check_wall_left())
 
         {
 
@@ -563,13 +500,13 @@ void update_walls()
 
 
 
-        if(check_wall_right)
+        if(check_wall_right())
 
         {
 
             wall_maze[current_row][current_column][2] = 1;
 
-            if((current_column+1)<(MAZE_SIZE-1))
+            if((current_column+1)<maze_size-1)
 
             {
 
@@ -585,7 +522,7 @@ void update_walls()
 
     {
 
-        if(check_wall_forward)
+        if(check_wall_forward())
 
         {
 
@@ -603,13 +540,13 @@ void update_walls()
 
 
 
-        if(check_wall_left)
+        if(check_wall_left())
 
         {
 
             wall_maze[current_row][current_column][3] = 1;
 
-            if((current_row+1)<(MAZE_SIZE-1))
+            if((current_row+1)<maze_size-1)
 
             {
 
@@ -621,7 +558,7 @@ void update_walls()
 
 
 
-        if(check_wall_right)
+        if(check_wall_right())
 
         {
 
@@ -643,13 +580,13 @@ void update_walls()
 
     {
 
-        if(check_wall_forward)
+        if(check_wall_forward())
 
         {
 
             wall_maze[current_row][current_column][2] = 1;
 
-            if((current_column+1)<(MAZE_SIZE-1))
+            if((current_column+1)<maze_size-1)
 
             {
 
@@ -661,7 +598,7 @@ void update_walls()
 
 
 
-        if(check_wall_left)
+        if(check_wall_left())
 
         {
 
@@ -679,13 +616,13 @@ void update_walls()
 
 
 
-        if(check_wall_right)
+        if(check_wall_right())
 
         {
 
             wall_maze[current_row][current_column][3] = 1;
 
-            if((current_row+1)<(MAZE_SIZE-1))
+            if((current_row+1)<maze_size-1)
 
             {
 
@@ -701,13 +638,13 @@ void update_walls()
 
     {
 
-        if(check_wall_forward)
+        if(check_wall_forward())
 
         {
 
             wall_maze[current_row][current_column][3] = 1;
 
-            if((current_row-1)<(MAZE_SIZE-1))
+            if((current_row-1)<maze_size-1)
 
             {
 
@@ -719,13 +656,13 @@ void update_walls()
 
 
 
-        if(check_wall_left)
+        if(check_wall_left())
 
         {
 
             wall_maze[current_row][current_column][2] = 1;
 
-            if((current_column+1)<(MAZE_SIZE-1))
+            if((current_column+1)<maze_size-1)
 
             {
 
@@ -737,7 +674,7 @@ void update_walls()
 
 
 
-        if(check_wall_right)
+        if(check_wall_right())
 
         {
 
@@ -765,11 +702,11 @@ void update_maze()
 
     int temp = 0;
 
-    for(int i = 0; i < MAZE_SIZE; i++)
+    for(int i = 0; i < maze_size; i++)
 
     {
 
-        for(int j = 0; j < MAZE_SIZE; j++)
+        for(int j = 0; j < maze_size; j++)
 
         {
 
@@ -963,7 +900,7 @@ void initialize_maze()
 
 
 
-            if(i == (MAZE_SIZE-1))
+            if(i == maze_size-1)
 
             {
 
@@ -983,7 +920,7 @@ void initialize_maze()
 
 
 
-            if(j == (MAZE_SIZE-1))
+            if(j == maze_size-1)
 
             {
 
@@ -1001,11 +938,11 @@ void initialize_maze()
 
     {
 
-        for(int j = (GOAL_COLUMN); j < MAZE_SIZE; j++)
+        for(int j = (GOAL_COLUMN); j < maze_size; j++)
 
         {
 
-            goal_maze[i][j] = ((GOAL_ROW+GOAL_COLUMN)-((i+1) + (((GOAL_ROW+GOAL_COLUMN)-(j+1)))));
+            goal_maze[i][j] = GOAL_ROW-i+j-GOAL_COLUMN;
 
 
 
@@ -1019,7 +956,7 @@ void initialize_maze()
 
 
 
-            if(i == (MAZE_SIZE-1))
+            if(i == maze_size-1)
 
             {
 
@@ -1039,7 +976,7 @@ void initialize_maze()
 
 
 
-            if(j == (MAZE_SIZE-1))
+            if(j == maze_size-1)
 
             {
 
@@ -1053,7 +990,7 @@ void initialize_maze()
 
 
 
-    for(int i = (GOAL_ROW); i < MAZE_SIZE; i++)
+    for(int i = (GOAL_ROW); i < maze_size; i++)
 
     {
 
@@ -1061,8 +998,7 @@ void initialize_maze()
 
         {
 
-            goal_maze[i][j] = ((GOAL_ROW+GOAL_COLUMN)-((((GOAL_ROW+GOAL_COLUMN)-(i+1))) + (j+1)));
-
+            goal_maze[i][j] = GOAL_COLUMN-j+i-GOAL_ROW;
 
 
             if(i == 0)
@@ -1075,7 +1011,7 @@ void initialize_maze()
 
 
 
-            if(i == (MAZE_SIZE-1))
+            if(i == maze_size-1)
 
             {
 
@@ -1095,7 +1031,7 @@ void initialize_maze()
 
 
 
-            if(j == (MAZE_SIZE-1))
+            if(j == maze_size-1)
 
             {
 
@@ -1109,15 +1045,15 @@ void initialize_maze()
 
 
 
-    for(int i = (GOAL_ROW); i < MAZE_SIZE; i++)
+    for(int i = (GOAL_ROW); i < maze_size; i++)
 
     {
 
-        for(int j = (GOAL_COLUMN); j < MAZE_SIZE; j++)
+        for(int j = (GOAL_COLUMN); j < maze_size; j++)
 
         {
 
-            goal_maze[i][j] = ((GOAL_ROW+GOAL_COLUMN)-((((GOAL_ROW+GOAL_COLUMN)-(i+1))+1) + (((GOAL_ROW+GOAL_COLUMN)-(j+1))+1)));
+            goal_maze[i][j] = i -GOAL_ROW+j-GOAL_COLUMN;
 
 
 
@@ -1131,7 +1067,7 @@ void initialize_maze()
 
 
 
-            if(i == (MAZE_SIZE-1))
+            if(i == maze_size-1)
 
             {
 
@@ -1151,7 +1087,7 @@ void initialize_maze()
 
 
 
-            if(j == (MAZE_SIZE-1))
+            if(j == maze_size-1)
 
             {
 
@@ -1259,10 +1195,10 @@ void go_forward(long distance)
 
     LEFT_ENCODER_FLAG=0;
 
-    distance=((distance*820)/(3*PI))*0.8;
+    distance=((distance*896)/(4.3*PI));
 
     long distance_right=abs(ENCODER_RIGHT.read());
-
+     
     long distance_left=abs(ENCODER_LEFT.read());
 
 
@@ -1311,7 +1247,7 @@ void go_forward(long distance)
 
             }
 
-            analogWrite(RIGHT_MOTOR_1,222);
+            analogWrite(RIGHT_MOTOR_1,240);
 
             analogWrite(RIGHT_MOTOR_2,0);
 
@@ -1321,7 +1257,7 @@ void go_forward(long distance)
 
         {
 
-            analogWrite(RIGHT_MOTOR_1,132);
+            analogWrite(RIGHT_MOTOR_1,140);
 
             analogWrite(RIGHT_MOTOR_2,0);
 
@@ -1341,7 +1277,7 @@ void go_forward(long distance)
 
         {
 
-            analogWrite(RIGHT_MOTOR_1,88);
+            analogWrite(RIGHT_MOTOR_1,90);
 
             analogWrite(RIGHT_MOTOR_2,0);
 
@@ -1385,7 +1321,7 @@ void go_forward(long distance)
 
             }
 
-            analogWrite(LEFT_MOTOR_1,255);
+            analogWrite(LEFT_MOTOR_1,240);
 
             analogWrite(LEFT_MOTOR_2,0);
 
@@ -1395,7 +1331,7 @@ void go_forward(long distance)
 
         {
 
-            analogWrite(LEFT_MOTOR_1,150);
+            analogWrite(LEFT_MOTOR_1,140);
 
             analogWrite(LEFT_MOTOR_2,0);
 
@@ -1415,7 +1351,7 @@ void go_forward(long distance)
 
         {
 
-            analogWrite(LEFT_MOTOR_1,98);
+            analogWrite(LEFT_MOTOR_1,90);
 
             analogWrite(LEFT_MOTOR_2,0);
 
@@ -1473,7 +1409,7 @@ void go_backward(long distance)
 
     LEFT_ENCODER_FLAG=0;
 
-    distance=((distance*820)/(3*PI));
+    distance=((distance*896)/(4.3*PI));
 
     long distance_right=(ENCODER_RIGHT.read());
 
@@ -1487,7 +1423,7 @@ void go_backward(long distance)
 
     long NewPositionLeft=(ENCODER_LEFT.read());
 
-    while((RIGHT_ENCODER_FLAG!=1)&&(LEFT_ENCODER_FLAG!=1))                //Some shortcoming is not allowing left motor to ro rotate fully
+    while((RIGHT_ENCODER_FLAG!=1)&&(LEFT_ENCODER_FLAG!=1))                
 
     {
 
@@ -1507,7 +1443,7 @@ void go_backward(long distance)
 
             }
 
-            analogWrite(RIGHT_MOTOR_2,255);
+            analogWrite(RIGHT_MOTOR_2,240);
 
             analogWrite(RIGHT_MOTOR_1,0);
 
@@ -1517,7 +1453,7 @@ void go_backward(long distance)
 
         {
 
-            analogWrite(RIGHT_MOTOR_2,150);
+            analogWrite(RIGHT_MOTOR_2,140);
 
             analogWrite(RIGHT_MOTOR_1,0);
 
@@ -1537,7 +1473,7 @@ void go_backward(long distance)
 
         {
 
-            analogWrite(RIGHT_MOTOR_2,135);
+            analogWrite(RIGHT_MOTOR_2,90);
 
             analogWrite(RIGHT_MOTOR_1,0);
 
@@ -1581,7 +1517,7 @@ void go_backward(long distance)
 
             }
 
-            analogWrite(LEFT_MOTOR_2,200);
+            analogWrite(LEFT_MOTOR_2,240);
 
             analogWrite(LEFT_MOTOR_1,0);
 
@@ -1591,7 +1527,7 @@ void go_backward(long distance)
 
         {
 
-            analogWrite(LEFT_MOTOR_2,137);
+            analogWrite(LEFT_MOTOR_2,140);
 
             analogWrite(LEFT_MOTOR_1,0);
 
@@ -1611,7 +1547,7 @@ void go_backward(long distance)
 
         {
 
-            analogWrite(LEFT_MOTOR_2,120);
+            analogWrite(LEFT_MOTOR_2,90);
 
             analogWrite(LEFT_MOTOR_1,0);
 
@@ -1647,9 +1583,9 @@ void go_backward(long distance)
 
             LEFT_ENCODER_FLAG=0;
 
-            LEFT_MOTOR_SPEED=255;
+            LEFT_MOTOR_SPEED=111;
 
-            RIGHT_MOTOR_SPEED=255;
+            RIGHT_MOTOR_SPEED=111;
 
             return;
 
@@ -1673,23 +1609,12 @@ void turn_right()
 
 {
 
-    // turn right and go one block ahead
-
-    // need to do some axis checking with maze and edit
-
-
-
-    // Distance between centres of the 2 wheels~~101mm
-
-    // Quarter circle traversed by each wheel=pi*50.5/2=79.32mm
-
-
 
     RIGHT_ENCODER_FLAG=0;
 
     LEFT_ENCODER_FLAG=0;
 
-    long distance=486+abs(ENCODER_LEFT.read());
+    long distance=410+abs(ENCODER_LEFT.read());
 
     long OldPositionRight  = -999;
 
@@ -1725,7 +1650,7 @@ void turn_right()
 
         {
 
-            analogWrite(RIGHT_MOTOR_2,255);
+            analogWrite(RIGHT_MOTOR_2,125);
 
             analogWrite(RIGHT_MOTOR_1,0);
 
@@ -1737,7 +1662,7 @@ void turn_right()
 
             analogWrite(LEFT_MOTOR_2,0);
 
-            analogWrite(LEFT_MOTOR_1,255);
+            analogWrite(LEFT_MOTOR_1,125);
 
         }
 
@@ -1823,7 +1748,7 @@ void turn_left()
 
     LEFT_ENCODER_FLAG=0;
 
-    long distance=490+abs(ENCODER_RIGHT.read());    //Though actual value is 345, I had to compensate for slipping
+    long distance=410+abs(ENCODER_RIGHT.read());    
 
     long OldPositionRight  = -999;
 
@@ -1863,7 +1788,7 @@ void turn_left()
 
             analogWrite(RIGHT_MOTOR_2,0);
 
-            analogWrite(RIGHT_MOTOR_1,255);
+            analogWrite(RIGHT_MOTOR_1,125);
 
         }
 
@@ -1871,7 +1796,7 @@ void turn_left()
 
         {
 
-            analogWrite(LEFT_MOTOR_2,255);
+            analogWrite(LEFT_MOTOR_2,125);
 
             analogWrite(LEFT_MOTOR_1,0);
 
@@ -1937,7 +1862,7 @@ void turn_left()
 
 }
 
-void drive_straight( float distance_right, float distance_left) //To be included in Forward
+void drive_straight( float distance_right, float distance_left) 
 
 {
 
@@ -1963,7 +1888,7 @@ void drive_straight( float distance_right, float distance_left) //To be included
 
 
 
-        D = (error - previous_error) * Kd;                   // may take out
+        D = (error - previous_error) * Kd;                   
 
         previous_error = error;
 
@@ -1977,21 +1902,21 @@ void drive_straight( float distance_right, float distance_left) //To be included
 
             LEFT_MOTOR_SPEED -= (total);
 
-            LEFT_MOTOR_SPEED = constrain(LEFT_MOTOR_SPEED, 120, 255);   // may need to adjust
+            LEFT_MOTOR_SPEED = constrain(LEFT_MOTOR_SPEED, 120, 200);   // may need to adjust
 
 
 
             RIGHT_MOTOR_SPEED += (total);
 
-            RIGHT_MOTOR_SPEED = constrain(RIGHT_MOTOR_SPEED, 120, 255);
+            RIGHT_MOTOR_SPEED = constrain(RIGHT_MOTOR_SPEED, 120, 200);
 
 
 
-            analogWrite(LEFT_MOTOR_ENABLE, LEFT_MOTOR_SPEED);      // enable pins and values
-
-                                                               // must be global
-
-            analogWrite(RIGHT_MOTOR_ENABLE, RIGHT_MOTOR_SPEED);
+            analogWrite(LEFT_MOTOR_1, LEFT_MOTOR_SPEED);
+            analogWrite(LEFT_MOTOR_2,0);
+            
+            analogWrite(RIGHT_MOTOR_1,RIGHT_MOTOR_SPEED);
+            analogWrite(LEFT_MOTOR_2,0);
 
         }
 
@@ -2003,13 +1928,30 @@ void drive_straight( float distance_right, float distance_left) //To be included
 
 }
 
+
 float Forward_Distance()
 
 {
 
-    SharpIR SharpIR(FRONT_IR_PIN, IR_MODEL);
+    float duration, cm;
+    
+    digitalWrite(trig_front, LOW);
+   
+    delayMicroseconds(10);
+   
+    digitalWrite(trig_front, HIGH);
+   
+    delayMicroseconds(10);
+   
+    digitalWrite(trig_front, LOW);
+     
+    duration = pulseIn(echo_front, HIGH);
 
-    return SharpIR.distance();
+    cm = duration * (17/1000);
+    Serial.print("front:");
+    Serial.print(cm);
+    
+    return cm;
 
 }
 
@@ -2019,9 +1961,25 @@ float Left_Distance()
 
 {
 
-    SharpIR SharpIR(LEFT_IR_PIN, IR_MODEL);
+    float duration, cm;
+    
+    digitalWrite(trig_left, LOW);
+   
+    delayMicroseconds(10);
+   
+    digitalWrite(trig_left, HIGH);
+   
+    delayMicroseconds(10);
+   
+    digitalWrite(trig_left, LOW);
+     
+    duration = pulseIn(echo_left, HIGH);
 
-    return (SharpIR.distance() + 0.45); //accounting for difference in values
+    cm = duration * (17/1000);
+    Serial.print("left:");
+    Serial.print(cm);
+    
+    return cm;
 
 }
 
@@ -2031,8 +1989,24 @@ float Right_Distance()
 
 {
 
-    SharpIR SharpIR(RIGHT_IR_PIN, IR_MODEL);
+    float duration, cm;
+    
+    digitalWrite(trig_right, LOW);
+   
+    delayMicroseconds(10);
+   
+    digitalWrite(trig_right, HIGH);
+   
+    delayMicroseconds(10);
+   
+    digitalWrite(trig_right, LOW);
+     
+    duration = pulseIn(echo_right, HIGH);
 
-    return SharpIR.distance();
+    cm = duration * (17/1000);
+    Serial.print("right:");
+    Serial.print(cm);
+
+    return cm;
 
 }

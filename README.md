@@ -17,4 +17,4 @@ Materials used:
 8. WHEEL CASTER
 9. ACRYLIC SHEET
 
-A huge thanks to my teammates for the huge contribution to the project!
+A big thanks to my teammates for the valuable contributions to the project!
